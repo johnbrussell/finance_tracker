@@ -1,4 +1,5 @@
 from services import setup_directories
+from services.transactions import Transaction
 from collections import namedtuple
 
 
@@ -15,14 +16,13 @@ class FinancialRecords:
         prompt = self.__create_prompt()
 
         while action != 'quit':
-            action = input(prompt).lower()
-            if action in self.__ACTIONS.keys() and action != 'quit':
+            if action in self.__ACTIONS.keys():
                 self.__ACTIONS[action].function()
-                continue
+            action = input(prompt).lower()
 
     def __set_up_actions(self):
         actions = {
-            'add': Action(function=self.__add_new_transaction(),
+            'add': Action(function=self.__add_new_transaction,
                           description='Record a new transaction'),
             'quit': Action(function='', description='Quit script')
         }
@@ -34,5 +34,6 @@ class FinancialRecords:
             prompt = prompt + '"{action}": '.format(action=action) + self.__ACTIONS[action].description + '\n'
         return prompt
 
-    def __add_new_transaction(self):
-        pass
+    @staticmethod
+    def __add_new_transaction():
+        Transaction()

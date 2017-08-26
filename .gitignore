@@ -1,7 +1,7 @@
 balances
 reports
-cache
 .idea/
+transactions
 
 !balances/empty_initial_balances.csv
 *__pycache__
