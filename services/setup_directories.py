@@ -3,6 +3,7 @@ import os
 
 DIRECTORIES_TO_SET_UP = [
     './reports'
+    './cache'
 ]
 
 

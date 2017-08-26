@@ -1,5 +1,6 @@
 balances
 reports
+cache
 .idea/
 
 !balances/empty_initial_balances.csv
