@@ -1,6 +1,7 @@
 from services import setup_directories
 from services.transactions import Transaction
 from collections import namedtuple
+import pandas as pd
 
 
 Action = namedtuple("Action", ['function', 'description'])
@@ -9,7 +10,13 @@ Action = namedtuple("Action", ['function', 'description'])
 class FinancialRecords:
     def __init__(self):
         setup_directories.setup_directories()
+        self.__ACCOUNTS = self.__get_accounts()
         self.__ACTIONS = self.__set_up_actions()
+
+    @staticmethod
+    def __get_accounts():
+        df = pd.read_csv('./balances/initial_balances.csv')
+        return list(set(df['Account'].tolist()))
 
     def interact_with_user(self):
         action = 'initial'
@@ -18,7 +25,7 @@ class FinancialRecords:
         while action != 'quit':
             if action in self.__ACTIONS.keys():
                 self.__ACTIONS[action].function()
-            action = input(prompt).lower()
+            action = raw_input(prompt).lower()
 
     def __set_up_actions(self):
         actions = {
@@ -34,6 +41,5 @@ class FinancialRecords:
             prompt = prompt + '"{action}": '.format(action=action) + self.__ACTIONS[action].description + '\n'
         return prompt
 
-    @staticmethod
-    def __add_new_transaction():
-        Transaction()
+    def __add_new_transaction(self):
+        Transaction(self.__ACCOUNTS).create_new_transaction()
