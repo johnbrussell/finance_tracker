@@ -141,7 +141,7 @@ class Transaction:
         to = raw_input("What account received the transaction?: ")
         to = self._detect_account(to)
         self._interpret_result(previous_steps=prev, current_step=self._get_to, next_steps=nxt,
-                               validation=self._validate_from, info=to, key=self.INFO_KEYS['To'])
+                               validation=self._validate_to, info=to, key=self.INFO_KEYS['To'])
 
     def _validate_to(self, to):
         frm = self.INFORMATION['From']
@@ -184,7 +184,7 @@ class Transaction:
         nxt = self._determine_categorization_finish(cat, nxt)
         key = self._determine_categorization_key(cat, level)
         self._interpret_result(previous_steps=prev, current_step=self._get_categories, next_steps=nxt,
-                                validation=self._validate_categories, info=cat, key=key)
+                               validation=self._validate_categories, info=cat, key=key)
 
     def _check_back_categories(self, cat, prev, return_level=False):
         level = 1
