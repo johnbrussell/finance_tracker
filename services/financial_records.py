@@ -10,36 +10,38 @@ Action = namedtuple("Action", ['function', 'description'])
 class FinancialRecords:
     def __init__(self):
         setup_directories.setup_directories()
-        self.__ACCOUNTS = self.__get_accounts()
-        self.__ACTIONS = self.__set_up_actions()
+        self._ACCOUNTS = self._get_accounts()
+        self._ACTIONS = self._set_up_actions()
 
     @staticmethod
-    def __get_accounts():
+    def _get_accounts():
         df = pd.read_csv('./balances/initial_balances.csv')
         return list(set(df['Account'].tolist()))
 
     def interact_with_user(self):
         action = 'initial'
-        prompt = self.__create_prompt()
+        prompt = self._create_prompt()
 
         while action != 'quit':
-            if action in self.__ACTIONS.keys():
-                self.__ACTIONS[action].function()
+            if action in self._ACTIONS.keys():
+                self._ACTIONS[action].function()
             action = raw_input(prompt).lower()
 
-    def __set_up_actions(self):
+    def _set_up_actions(self):
+        # Must be function to use _add_new_transaction as object
         actions = {
-            'add': Action(function=self.__add_new_transaction,
+            'add': Action(function=self._add_new_transaction,
                           description='Record a new transaction'),
             'quit': Action(function='', description='Quit script')
         }
         return actions
 
-    def __create_prompt(self):
+    def _create_prompt(self):
         prompt = 'Available actions are: \n'
-        for action in self.__ACTIONS.keys():
-            prompt = prompt + '"{action}": '.format(action=action) + self.__ACTIONS[action].description + '\n'
+        for action in self._ACTIONS.keys():
+            prompt += '"{action}": {description}\n'.format(
+                action=action, description=self._ACTIONS[action].description)
         return prompt
 
-    def __add_new_transaction(self):
-        Transaction(self.__ACCOUNTS).create_new_transaction()
+    def _add_new_transaction(self):
+        Transaction(self._ACCOUNTS).create_new_transaction()
