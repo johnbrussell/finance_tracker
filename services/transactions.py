@@ -23,7 +23,13 @@ class Transaction:
 
     def __init__(self, accounts):
         self.INFORMATION = dict()
-        self.ACCOUNTS = accounts
+        self.ACCOUNTS = self._check_accounts(accounts)
+
+    def _check_accounts(self, accounts):
+        for account in accounts:
+            if account in self.KEYWORDS:
+                raise ValueError("Account name %s must be changed; overlaps with reserved word" % account)
+        return accounts
 
     def _create_process(self):
         self._PROCESS = [
@@ -78,12 +84,12 @@ class Transaction:
 
     def _get_date(self, prev=list(), nxt=list()):
         date = raw_input("Enter the date of the transaction (MM/DD/YYYY): ")
-        date = date.replace('-', '').replace('_', '')
         self._interpret_result(previous_steps=prev, current_step=self._get_date, next_steps=nxt,
                                validation=self._validate_date, info=date, key=self.INFO_KEYS['Date'])
 
     @staticmethod
     def _validate_date(date):
+        date = date.replace('-', '/').replace('_', '/')
         try:
             datetime.strptime(date, '%m/%d/%y')
             return True
