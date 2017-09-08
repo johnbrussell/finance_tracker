@@ -99,13 +99,18 @@ class FinancialRecords:
     def _set_transaction_columns(self):
         df = self._TRANSACTIONS
         columns = df.columns
+        categories = self._get_list_of_categories(columns)
+        columns = ['Date', 'From', 'To', 'Memo', 'Amount'] + categories
+        df = df[columns]
+        self._TRANSACTIONS = df
+
+    @staticmethod
+    def _get_list_of_categories(columns):
         categories = [col.lower() for col in columns if 'ategory' in col]
         categories = [int(col.lstrip('category')) for col in categories]
         categories.sort()
         categories = ['Category%s' % str(cat) for cat in categories]
-        columns = ['Date', 'From', 'To', 'Memo', 'Amount'] + categories
-        df = df[columns]
-        self._TRANSACTIONS = df
+        return categories
 
     def _calculate_balances(self):
         self._update_list_of_transactions()
