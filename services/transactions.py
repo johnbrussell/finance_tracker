@@ -245,7 +245,7 @@ class Transaction:
         name = self.INFORMATION[self.INFO_KEYS['Date']].replace('/', '-') + \
             self.INFORMATION[self.INFO_KEYS['From']] + '_' + \
             self.INFORMATION[self.INFO_KEYS['To']] + str(name_decorator)
-        while name + str(name_decorator) in os.listdir('./transactions/unreconciled/'):
+        while name + str(name_decorator) + '.json' in os.listdir('./transactions/unreconciled/'):
             name_decorator += 1
         name = name.replace('/', '_') + str(name_decorator) + '.json'
         with open(os.path.join('./transactions/unreconciled/', name), 'w') as f:
