@@ -62,7 +62,9 @@ class FinancialRecords:
                               description='Calculate current balances'),
             'quit': Action(function='', description='Quit script'),
             'report': Action(function=self._run_report,
-                             description='Run expense report')
+                             description='Run expense report'),
+            'edit': Action(function=self._search_for_transaction,
+                           description='Edit transaction')
         }
         return actions
 
@@ -106,7 +108,7 @@ class FinancialRecords:
         columns = ['Date', 'From', 'To', 'Memo', 'Amount'] + categories
         df = df[columns]
         df['Date'] = pd.to_datetime(df['Date']).dt.date
-        df.sort_values(['Date', 'From', 'To', 'Amount'], inplace=True)
+        df.sort_values(['Date', 'From', 'To', 'Amount'], ascending=False, inplace=True)
         self._TRANSACTIONS = df
 
     @staticmethod
@@ -153,4 +155,43 @@ class FinancialRecords:
         report = ReportingQueue(df, 'Expense')
         report.run_report()
 
+    def _search_for_transaction(self):
+        columns = list(self._TRANSACTIONS.columns)
+        column_dict = dict()
+        for col in columns:
+            column_dict[col] = col
+            column_dict[col.lower()] = col
+        non_cat_cols = [col for col in columns if 'Category' not in col] + ['Category']
 
+        message = 'On what parameter should the search be?: %s ' % non_cat_cols
+        search_col = 'notacolumnname'
+        while search_col not in column_dict.keys() and 'category' != search_col:
+            search_col = raw_input(message).lower()
+
+        message = 'Enter search key: '
+        search_val = raw_input(message)
+
+        df = self._TRANSACTIONS.copy().fillna('')
+        df['Key'] = range(len(df))
+        for col in column_dict.values():
+            df[col] = df[col].apply(str)
+        df_list = list()
+        for col in column_dict.keys():
+            if search_col in col:
+                df_list.append(df[df[column_dict[col]].str.contains(search_val)].copy())
+        df_list = pd.concat(df_list)
+
+        for index, row in df_list.iterrows():
+            response = 'notyn'
+            while response not in ['y', 'n']:
+                response = raw_input('Is this the transaction you are looking to edit?: \n %s ' % row).lower()
+
+            if response == 'y':
+                df = df[df['Key'] != row['Key']]
+                del df['Key']
+                self._TRANSACTIONS = df.copy()
+                self._add_new_transaction()
+                self._update_list_of_transactions()
+                self._clear_unreconciled_transactions()
+                self._TRANSACTIONS['Amount'] = self._TRANSACTIONS['Amount'].apply(float)
+                break
