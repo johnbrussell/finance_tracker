@@ -1,5 +1,6 @@
 from services import setup_directories
 from services.transactions import Transaction
+from services.reporting_queue import ReportingQueue
 from collections import namedtuple
 import pandas as pd
 import os
@@ -58,8 +59,10 @@ class FinancialRecords:
             'add': Action(function=self._add_new_transaction,
                           description='Record a new transaction'),
             'balance': Action(function=self._calculate_balances,
-                          description='Calculate current balances'),
-            'quit': Action(function='', description='Quit script')
+                              description='Calculate current balances'),
+            'quit': Action(function='', description='Quit script'),
+            'report': Action(function=self._run_report,
+                             description='Run expense report')
         }
         return actions
 
@@ -102,6 +105,8 @@ class FinancialRecords:
         categories = self._get_list_of_categories(columns)
         columns = ['Date', 'From', 'To', 'Memo', 'Amount'] + categories
         df = df[columns]
+        df['Date'] = pd.to_datetime(df['Date']).dt.date
+        df.sort_values(['Date', 'From', 'To', 'Amount'], inplace=True)
         self._TRANSACTIONS = df
 
     @staticmethod
@@ -129,3 +134,23 @@ class FinancialRecords:
         self._set_balances(balances)
         print balances
         print "Net worth: ", balances['Starting Balance'].sum()
+
+    def _run_report(self):
+        self._run_income_report()
+        self._run_expense_report()
+
+    def _run_income_report(self):
+        df = self._TRANSACTIONS.copy()
+        df = df[df['To'].isin(self._ACCOUNTS)]
+        df = df[~df['From'].isin(self._ACCOUNTS)]
+        report = ReportingQueue(df, 'Income')
+        report.run_report()
+
+    def _run_expense_report(self):
+        df = self._TRANSACTIONS.copy()
+        df = df[df['From'].isin(self._ACCOUNTS)]
+        df = df[~df['To'].isin(self._ACCOUNTS)]
+        report = ReportingQueue(df, 'Expense')
+        report.run_report()
+
+
