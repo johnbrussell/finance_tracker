@@ -66,7 +66,9 @@ class FinancialRecords:
             'edit': Action(function=self._search_for_transaction,
                            description='Edit transaction'),
             'recalculate': Action(function=self._recalculate_transactions,
-                                  description='Recalculate current balances')
+                                  description='Recalculate current balances'),
+            'account': Action(function=self._add_account,
+                              description="Add a new account")
         }
         return actions
 
@@ -204,3 +206,22 @@ class FinancialRecords:
                 self._add_new_transaction()
                 self._calculate_balances(quiet=True)
                 break
+
+    @staticmethod
+    def _add_account():
+        if 'initial_balances.csv' in os.listdir('./balances'):
+            df = pd.read_csv('./balances/initial_balances.csv')
+        else:
+            df = pd.DataFrame()
+
+        yn_response = 'notaresponse'
+        while yn_response not in ['y', 'n']:
+            account = raw_input("Enter name of account to add: ")
+            initial_balance = raw_input("Enter initial balance of account: ")
+            yn_response = raw_input("Confirm: %s account has initial balance of %s: " %
+                                    (account, initial_balance)).lower()
+
+        row = list()
+        row.append({'Account': account, 'Starting Balance': initial_balance})
+        df = pd.concat([df, pd.DataFrame(row)])
+        df.to_csv('./balances/initial_balances.csv', index=False)
