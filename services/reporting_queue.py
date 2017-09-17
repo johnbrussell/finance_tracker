@@ -51,7 +51,7 @@ class ReportingQueue:
 
         for sub_cat in sub_categories:
             self._QUEUE.append(QueueElement(category=sub_cat,
-                                            category_path='%s|%s' % (category_path, sub_cat),
+                                            category_path='%s | %s' % (category_path, sub_cat),
                                             prior_categories=prior_categories,
                                             prior_amounts=prior_amounts))
 

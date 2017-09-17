@@ -64,7 +64,9 @@ class FinancialRecords:
             'report': Action(function=self._run_report,
                              description='Run expense report'),
             'edit': Action(function=self._search_for_transaction,
-                           description='Edit transaction')
+                           description='Edit transaction'),
+            'recalculate': Action(function=self._recalculate_transactions,
+                                  description='Recalculate current balances')
         }
         return actions
 
@@ -119,9 +121,16 @@ class FinancialRecords:
         categories = ['Category%s' % str(cat) for cat in categories]
         return categories
 
-    def _calculate_balances(self):
+    def _recalculate_transactions(self):
+        self._set_balances(pd.read_csv('./balances/initial_balances.csv'))
+        self._calculate_balances(True)
+
+    def _calculate_balances(self, full=False, quiet=False):
         self._update_list_of_transactions()
-        new_transactions = self._get_new_transactions()
+        if not full:
+            new_transactions = self._get_new_transactions()
+        else:
+            new_transactions = self._TRANSACTIONS.copy()
         self._clear_unreconciled_transactions()
         for index, trans in new_transactions.iterrows():
             if trans['From'] in self._BALANCES.keys():
@@ -134,10 +143,12 @@ class FinancialRecords:
         balances = pd.DataFrame([self._ACCOUNTS, balances]).transpose()
         balances.columns = ['Account', 'Starting Balance']
         self._set_balances(balances)
-        print balances
-        print "Net worth: ", balances['Starting Balance'].sum()
+        if not quiet:
+            print balances
+            print "Net worth: ", balances['Starting Balance'].sum()
 
     def _run_report(self):
+        self._TRANSACTIONS['Amount'] = self._TRANSACTIONS['Amount'].apply(float)
         self._run_income_report()
         self._run_expense_report()
 
@@ -191,7 +202,5 @@ class FinancialRecords:
                 del df['Key']
                 self._TRANSACTIONS = df.copy()
                 self._add_new_transaction()
-                self._update_list_of_transactions()
-                self._clear_unreconciled_transactions()
-                self._TRANSACTIONS['Amount'] = self._TRANSACTIONS['Amount'].apply(float)
+                self._calculate_balances(quiet=True)
                 break
