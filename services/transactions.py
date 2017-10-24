@@ -200,7 +200,12 @@ class Transaction:
                                validation=self._validate_categories, info=cat, key=key)
 
     def _check_back_categories(self, cat, prev, return_level=False):
-        # This function removes
+        # This function counts the number of times the `get_categories` function was used.
+        # If cat is "back", then it will remove all but one of these instances from the list of
+        #  previously visited functions.
+        # If return_level is true, it will return one more than the number of times the `get_categories`
+        #  function was used.
+        # It will always return the list of previously visited functions. 
         level = 1
         for key in self.INFORMATION.keys():
             if 'Category' in key:
