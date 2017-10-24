@@ -52,6 +52,7 @@ class Transaction:
         self._PROCESS[0](prev=list(), nxt=self._PROCESS[1:])
 
     def _interpret_result(self, previous_steps, current_step, next_steps, validation, info, key, **kwargs):
+        # Info is the information collected in the function being interpreted.
         if info.lower() not in self.KEYWORDS:
             validation = validation(info, kwargs) if kwargs else validation(info)
             if validation:
@@ -127,15 +128,21 @@ class Transaction:
 
         distances = [editdistance.eval(frm, account) for account in self.ACCOUNTS]
         for account, distance in zip(self.ACCOUNTS, distances):
-            if distance <= max(abs(len(frm) - len(account)) - 1, min(len(frm), len(account)) / 2) or \
-                    account in frm or frm in account:
+            if self._similar_to_an_account(frm, account, distance):
                 yn = self._get_yn_response("Did you mean: %s?" % account)
                 if yn in self.KEYWORDS:
                     return self._back_to_repeat(yn)
                 if yn == 'y':
                     return account
-
         return frm
+
+    @staticmethod
+    def _similar_to_an_account(frm, account, distance):
+        if distance <= max(abs(len(frm) - len(account)) - 1, min(len(frm), len(account)) / 2):
+            return True
+        if account in frm or frm in account:  # Eschewing return "a in b or b in a" format for clarity.
+            return True
+        return False
 
     @staticmethod
     def _validate_from(frm):
@@ -193,6 +200,7 @@ class Transaction:
                                validation=self._validate_categories, info=cat, key=key)
 
     def _check_back_categories(self, cat, prev, return_level=False):
+        # This function removes
         level = 1
         for key in self.INFORMATION.keys():
             if 'Category' in key:
@@ -204,6 +212,7 @@ class Transaction:
             prev = [fun for fun in prev if fun != self._get_categories]
         if return_level:
             return level, prev
+        return prev
 
     def _determine_categorization_finish(self, cat, nxt):
         if cat in ['done', 'back']:
@@ -231,6 +240,10 @@ class Transaction:
         yn = self._get_yn_response('Is this correct?')
         if yn == 'n':
             yn = 'back'
+            re_append = prev[len(prev) - 1] == self._get_categories
+            prev = self._check_back_categories(yn, prev)
+            if re_append:
+                prev.append(self._get_categories)
         self._interpret_result(previous_steps=prev, current_step=self._confirm, next_steps=nxt,
                                validation=self._validate_confirmation, info=yn, key='')
 
