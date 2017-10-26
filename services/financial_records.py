@@ -2,6 +2,7 @@ from services import setup_directories
 from services.transactions import Transaction
 from services.reporting_queue import ReportingQueue
 from collections import namedtuple
+import editdistance
 import pandas as pd
 import os
 import json
@@ -191,7 +192,12 @@ class FinancialRecords:
         df_list = list()
         for col in column_dict.keys():
             if search_col in col:
-                df_list.append(df[df[column_dict[col]].str.contains(search_val)].copy())
+                df['editdistance'] = len(search_val)
+                if search_col != 'amount':
+                    df['editdistance'] = df[column_dict[col]].apply(
+                        lambda x: editdistance.eval(x, search_val))
+                df_list.append(df[df['editdistance'] < max(len(search_val) - 2, len(search_val) / 2)].copy())
+                del df['editdistance']
         df_list = pd.concat(df_list)
 
         for index, row in df_list.iterrows():
