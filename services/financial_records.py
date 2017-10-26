@@ -207,13 +207,7 @@ class FinancialRecords:
                 self._calculate_balances(quiet=True)
                 break
 
-    @staticmethod
-    def _add_account():
-        if 'initial_balances.csv' in os.listdir('./balances'):
-            df = pd.read_csv('./balances/initial_balances.csv')
-        else:
-            df = pd.DataFrame()
-
+    def _add_account(self):
         yn_response = 'notaresponse'
         while yn_response not in ['y', 'n']:
             account = raw_input("Enter name of account to add: ")
@@ -223,5 +217,13 @@ class FinancialRecords:
 
         row = list()
         row.append({'Account': account, 'Starting Balance': initial_balance})
-        df = pd.concat([df, pd.DataFrame(row)])
-        df.to_csv('./balances/initial_balances.csv', index=False)
+
+        for type in ['initial', 'current']:
+            if '{df}_balances.csv'.format(df=type) in os.listdir('./balances'):
+                df = pd.read_csv('./balances/{df}_balances.csv'.format(df=type))
+            else:
+                df = pd.DataFrame()
+            df = pd.concat([df, pd.DataFrame(row)])
+            df.to_csv('./balances/{df}_balances.csv'.format(df=type), index=False)
+
+        self._set_balances(self._read_balances())
