@@ -126,7 +126,7 @@ class FinancialRecords:
 
     def _recalculate_transactions(self):
         self._set_balances(pd.read_csv('./balances/initial_balances.csv'))
-        self._calculate_balances(True)
+        self._calculate_balances(full=True)
 
     def _calculate_balances(self, full=False, quiet=False):
         self._update_list_of_transactions()
@@ -170,6 +170,7 @@ class FinancialRecords:
         report.run_report()
 
     def _search_for_transaction(self):
+        self._calculate_balances(quiet=True)
         columns = list(self._TRANSACTIONS.columns)
         column_dict = dict()
         for col in columns:
