@@ -3,3 +3,5 @@ a more detailed manner than is allowed by programs such as Quicken.  This is not
 who relies on bank statements to track their finances, but rather for an individual who wishes to keep a
 separate record that they may compare to bank statements.  (One may use this project as an electronic way to
 balance a checkbook.)
+
+To install, simply clone; all transactions can be added by running `finance_main.py`.

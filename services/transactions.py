@@ -195,7 +195,7 @@ class Transaction:
         if self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
             cat = 'Transfer'
         else:
-            cat = raw_input("Enter category, or 'done' to stop categorizing: ")
+            cat = raw_input("Enter category, or 'done' to stop categorizing: ").strip(' ')
         level, prev = self._check_back_categories(cat, prev, return_level=True)
         if level > 1 and \
                 self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
