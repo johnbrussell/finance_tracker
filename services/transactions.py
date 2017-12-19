@@ -192,8 +192,14 @@ class Transaction:
         return False
 
     def _get_categories(self, prev=list(), nxt=list()):
-        cat = raw_input("Enter category, or 'done' to stop categorizing: ")
+        if self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
+            cat = 'Transfer'
+        else:
+            cat = raw_input("Enter category, or 'done' to stop categorizing: ")
         level, prev = self._check_back_categories(cat, prev, return_level=True)
+        if level > 1 and \
+                self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
+            cat = 'done'
         nxt = self._determine_categorization_finish(cat, nxt)
         key = self._determine_categorization_key(cat, level)
         self._interpret_result(previous_steps=prev, current_step=self._get_categories, next_steps=nxt,
