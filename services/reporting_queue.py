@@ -20,7 +20,7 @@ class ReportingQueue:
         self.REPORT = pd.DataFrame(self.REPORT)
         self._order_columns()
         self.REPORT.to_csv('./reports/%s_%s.csv' %
-            (self._TYPE, datetime.strftime(datetime.today(), '%Y%m%d')), index=False)
+                           (self._TYPE, datetime.strftime(datetime.today(), '%Y%m%d')), index=False)
 
     @staticmethod
     def _create_queue(category):
@@ -91,7 +91,8 @@ class ReportingQueue:
         df = df.copy()
         for sub_cat in sub_categories:
             alt_level = 1
-            line_dict = {'Category': sub_cat}
+            line_dict = {'Category':
+                         '{} ${}'.format(sub_cat, str(df.loc[df['To'] == sub_cat, 'Amount'].sum()))}
             for prior_cat, prior_amt in zip(prior_categories, prior_amounts):
                 sub_amt = df.loc[df['To'] == sub_cat, 'Amount'].sum()
                 sub_prc = round(float(sub_amt) / float(prior_amt) * float(100), 2)
