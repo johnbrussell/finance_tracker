@@ -301,7 +301,7 @@ class Transaction:
         if self.OTHER_TRANSACTIONS.empty:
             return cat
         if cat.capitalize() in list(self.OTHER_TRANSACTIONS['Category{}'.format(str(level))]) and \
-                cat != cat.capitalize():
+                cat != cat.capitalize() and cat not in self.ACCOUNTS:
             yn = self._get_yn_response("Did you mean {}? ".format(cat.capitalize()))
             if yn == 'y':
                 return cat.capitalize()
