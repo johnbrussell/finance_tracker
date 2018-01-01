@@ -142,7 +142,7 @@ class FinancialRecords:
                 self._BALANCES[trans['To']] += float(trans['Amount'])
         balances = list()
         for key in self._ACCOUNTS:
-            balances.append(self._BALANCES[key])
+            balances.append(round(float(self._BALANCES[key]), 2))
         balances = pd.DataFrame([self._ACCOUNTS, balances]).transpose()
         balances.columns = ['Account', 'Starting Balance']
         self._set_balances(balances)

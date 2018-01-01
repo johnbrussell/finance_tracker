@@ -232,12 +232,12 @@ class Transaction:
         return prev
 
     def _determine_categorization_finish(self, cat, nxt):
-        if cat in ['done', 'back']:
+        if cat.lower() in ['done', 'back']:
             return nxt
         return [self._get_categories] + nxt
 
     def _determine_categorization_key(self, cat, level):
-        if cat == 'done':
+        if cat.lower() == 'done':
             return ''
         return '%s%s' % (self.INFO_KEYS['Category'], str(level))
 
@@ -254,7 +254,7 @@ class Transaction:
         print 'Amount:', self.INFORMATION['Amount']
         for number in range(1, max_category):
             print 'Category%s:' % number, self.INFORMATION['Category%s' % number]
-        yn = self._get_yn_response('Is this correct?')
+        yn = self._get_yn_response('Is this correct? ')
         if yn == 'n':
             yn = 'back'
             re_append = prev[len(prev) - 1] == self._get_categories
@@ -309,7 +309,8 @@ class Transaction:
                 cat = cat.capitalize()
             if yn in self.KEYWORDS:
                 return yn
-        if cat not in list(self.OTHER_TRANSACTIONS[col_name]):
+        if cat not in list(self.OTHER_TRANSACTIONS[col_name]) and cat not in self.KEYWORDS and \
+                (cat.lower() != 'done' or "category" not in col_name.lower()):
             yn = self._get_yn_response("Value of {} never seen before; really add? ".format(col_name))
             if yn in self.KEYWORDS:
                 return yn
