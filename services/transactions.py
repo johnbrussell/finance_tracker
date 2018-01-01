@@ -2,6 +2,7 @@ from datetime import datetime
 import editdistance
 import os
 import json
+import pandas as pd
 
 
 class Transaction:
@@ -24,6 +25,8 @@ class Transaction:
     def __init__(self, accounts):
         self.INFORMATION = dict()
         self.ACCOUNTS = self._check_accounts(accounts)
+        self.OTHER_TRANSACTIONS = pd.read_csv('./transactions/transactions.csv') if os.path.exists(
+            './transactions/transactions.csv') else pd.DataFrame()
 
     def _check_accounts(self, accounts):
         for account in accounts:
@@ -200,6 +203,7 @@ class Transaction:
         if level > 1 and \
                 self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
             cat = 'done'
+        cat = self._infer_category(cat, level)
         nxt = self._determine_categorization_finish(cat, nxt)
         key = self._determine_categorization_key(cat, level)
         self._interpret_result(previous_steps=prev, current_step=self._get_categories, next_steps=nxt,
@@ -292,3 +296,15 @@ class Transaction:
         while yn not in ['y', 'n'] and yn not in self.KEYWORDS:
             yn = raw_input(message + ' (y/n): ').lower()
         return yn
+
+    def _infer_category(self, cat, level):
+        if self.OTHER_TRANSACTIONS.empty:
+            return cat
+        if cat.capitalize() in list(self.OTHER_TRANSACTIONS['Category{}'.format(str(level))]) and \
+                cat != cat.capitalize():
+            yn = self._get_yn_response("Did you mean {}? ".format(cat.capitalize()))
+            if yn == 'y':
+                return cat.capitalize()
+            if yn in self.KEYWORDS:
+                return yn
+        return cat
