@@ -110,6 +110,7 @@ class Transaction:
     def _get_from(self, prev=list(), nxt=list()):
         frm = raw_input("What account funded the transaction?: ")
         frm = self._detect_account(frm)
+        frm = self._infer_name(frm, "From")
         frm = self._detect_income(frm)
         self._interpret_result(previous_steps=prev, current_step=self._get_from, next_steps=nxt,
                                validation=self._validate_from, info=frm, key=self.INFO_KEYS['From'])
@@ -156,6 +157,7 @@ class Transaction:
     def _get_to(self, prev=list(), nxt=list()):
         to = raw_input("What account received the transaction?: ")
         to = self._detect_account(to)
+        to = self._infer_name(to, "To")
         self._interpret_result(previous_steps=prev, current_step=self._get_to, next_steps=nxt,
                                validation=self._validate_to, info=to, key=self.INFO_KEYS['To'])
 
@@ -203,7 +205,7 @@ class Transaction:
         if level > 1 and \
                 self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
             cat = 'done'
-        cat = self._infer_category(cat, level)
+        cat = self._infer_name(cat, 'Category{}'.format(str(level)))
         nxt = self._determine_categorization_finish(cat, nxt)
         key = self._determine_categorization_key(cat, level)
         self._interpret_result(previous_steps=prev, current_step=self._get_categories, next_steps=nxt,
@@ -297,14 +299,20 @@ class Transaction:
             yn = raw_input(message + ' (y/n): ').lower()
         return yn
 
-    def _infer_category(self, cat, level):
+    def _infer_name(self, cat, col_name):
         if self.OTHER_TRANSACTIONS.empty:
             return cat
-        if cat.capitalize() in list(self.OTHER_TRANSACTIONS['Category{}'.format(str(level))]) and \
+        if cat.capitalize() in list(self.OTHER_TRANSACTIONS[col_name]) and \
                 cat != cat.capitalize() and cat not in self.ACCOUNTS:
             yn = self._get_yn_response("Did you mean {}? ".format(cat.capitalize()))
             if yn == 'y':
-                return cat.capitalize()
+                cat = cat.capitalize()
             if yn in self.KEYWORDS:
                 return yn
+        if cat not in list(self.OTHER_TRANSACTIONS[col_name]):
+            yn = self._get_yn_response("Value of {} never seen before; really add? ".format(col_name))
+            if yn in self.KEYWORDS:
+                return yn
+            if yn == 'n':
+                cat = 'repeat'
         return cat
