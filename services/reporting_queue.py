@@ -66,9 +66,9 @@ class ReportingQueue:
                 alt_level += 1
             self.REPORT.append(line_dict)
 
-        sub_categories = list(df.loc[df['Category%s' % str(level)] == '', "To"].unique())
-        if sub_categories:
-            self._analyze_to(sub_categories, prior_categories, prior_amounts, df)
+        empty_df = df[df['Category%s' % str(level)] == ''].copy()
+        if not empty_df.empty:
+            self._analyze_to(prior_categories, prior_amounts, empty_df)
 
     def _determine_subset(self, prior_categories, new_category):
         df = self._DF.copy()
@@ -88,8 +88,9 @@ class ReportingQueue:
         df = df[output_columns]
         self.REPORT = df.copy()
 
-    def _analyze_to(self, sub_categories, prior_categories, prior_amounts, df):
+    def _analyze_to(self, prior_categories, prior_amounts, df):
         df = df.copy()
+        sub_categories = list(df["To"].unique())
         for sub_cat in sub_categories:
             alt_level = 1
             line_dict = {'Category':
