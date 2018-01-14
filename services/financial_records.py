@@ -234,3 +234,4 @@ class FinancialRecords:
             df.to_csv('./balances/{df}_balances.csv'.format(df=type), index=False)
 
         self._set_balances(self._read_balances())
+        self._ACCOUNTS = self._get_accounts()
