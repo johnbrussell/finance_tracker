@@ -2,6 +2,7 @@ from datetime import datetime
 import editdistance
 import os
 import json
+import pandas as pd
 
 
 class Transaction:
@@ -24,6 +25,8 @@ class Transaction:
     def __init__(self, accounts):
         self.INFORMATION = dict()
         self.ACCOUNTS = self._check_accounts(accounts)
+        self.OTHER_TRANSACTIONS = pd.read_csv('./transactions/transactions.csv') if os.path.exists(
+            './transactions/transactions.csv') else pd.DataFrame()
 
     def _check_accounts(self, accounts):
         for account in accounts:
@@ -52,6 +55,7 @@ class Transaction:
         self._PROCESS[0](prev=list(), nxt=self._PROCESS[1:])
 
     def _interpret_result(self, previous_steps, current_step, next_steps, validation, info, key, **kwargs):
+        # Info is the information collected in the function being interpreted.
         if info.lower() not in self.KEYWORDS:
             validation = validation(info, kwargs) if kwargs else validation(info)
             if validation:
@@ -106,6 +110,7 @@ class Transaction:
     def _get_from(self, prev=list(), nxt=list()):
         frm = raw_input("What account funded the transaction?: ")
         frm = self._detect_account(frm)
+        frm = self._infer_name(frm, "From")
         frm = self._detect_income(frm)
         self._interpret_result(previous_steps=prev, current_step=self._get_from, next_steps=nxt,
                                validation=self._validate_from, info=frm, key=self.INFO_KEYS['From'])
@@ -127,15 +132,21 @@ class Transaction:
 
         distances = [editdistance.eval(frm, account) for account in self.ACCOUNTS]
         for account, distance in zip(self.ACCOUNTS, distances):
-            if distance <= max(abs(len(frm) - len(account)) - 1, min(len(frm), len(account)) / 2) or \
-                    account in frm or frm in account:
+            if self._similar_to_an_account(frm, account, distance):
                 yn = self._get_yn_response("Did you mean: %s?" % account)
                 if yn in self.KEYWORDS:
                     return self._back_to_repeat(yn)
                 if yn == 'y':
                     return account
-
         return frm
+
+    @staticmethod
+    def _similar_to_an_account(frm, account, distance):
+        if distance <= max(abs(len(frm) - len(account)) - 1, min(len(frm), len(account)) / 2):
+            return True
+        if account in frm or frm in account:  # Eschewing return "a in b or b in a" format for clarity.
+            return True
+        return False
 
     @staticmethod
     def _validate_from(frm):
@@ -146,6 +157,7 @@ class Transaction:
     def _get_to(self, prev=list(), nxt=list()):
         to = raw_input("What account received the transaction?: ")
         to = self._detect_account(to)
+        to = self._infer_name(to, "To")
         self._interpret_result(previous_steps=prev, current_step=self._get_to, next_steps=nxt,
                                validation=self._validate_to, info=to, key=self.INFO_KEYS['To'])
 
@@ -185,14 +197,27 @@ class Transaction:
         return False
 
     def _get_categories(self, prev=list(), nxt=list()):
-        cat = raw_input("Enter category, or 'done' to stop categorizing: ")
+        if self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
+            cat = 'Transfer'
+        else:
+            cat = raw_input("Enter category, or 'done' to stop categorizing: ").strip(' ')
         level, prev = self._check_back_categories(cat, prev, return_level=True)
+        if level > 1 and \
+                self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
+            cat = 'done'
+        cat = self._infer_name(cat, 'Category{}'.format(str(level)))
         nxt = self._determine_categorization_finish(cat, nxt)
         key = self._determine_categorization_key(cat, level)
         self._interpret_result(previous_steps=prev, current_step=self._get_categories, next_steps=nxt,
                                validation=self._validate_categories, info=cat, key=key)
 
     def _check_back_categories(self, cat, prev, return_level=False):
+        # This function counts the number of times the `get_categories` function was used.
+        # If cat is "back", then it will remove all but one of these instances from the list of
+        #  previously visited functions.
+        # If return_level is true, it will return one more than the number of times the `get_categories`
+        #  function was used.
+        # It will always return the list of previously visited functions. 
         level = 1
         for key in self.INFORMATION.keys():
             if 'Category' in key:
@@ -204,14 +229,15 @@ class Transaction:
             prev = [fun for fun in prev if fun != self._get_categories]
         if return_level:
             return level, prev
+        return prev
 
     def _determine_categorization_finish(self, cat, nxt):
-        if cat in ['done', 'back']:
+        if cat.lower() in ['done', 'back']:
             return nxt
         return [self._get_categories] + nxt
 
     def _determine_categorization_key(self, cat, level):
-        if cat == 'done':
+        if cat.lower() == 'done':
             return ''
         return '%s%s' % (self.INFO_KEYS['Category'], str(level))
 
@@ -228,9 +254,13 @@ class Transaction:
         print 'Amount:', self.INFORMATION['Amount']
         for number in range(1, max_category):
             print 'Category%s:' % number, self.INFORMATION['Category%s' % number]
-        yn = self._get_yn_response('Is this correct?')
+        yn = self._get_yn_response('Is this correct? ')
         if yn == 'n':
             yn = 'back'
+            re_append = prev[len(prev) - 1] == self._get_categories
+            prev = self._check_back_categories(yn, prev)
+            if re_append:
+                prev.append(self._get_categories)
         self._interpret_result(previous_steps=prev, current_step=self._confirm, next_steps=nxt,
                                validation=self._validate_confirmation, info=yn, key='')
 
@@ -245,7 +275,7 @@ class Transaction:
         name = self.INFORMATION[self.INFO_KEYS['Date']].replace('/', '-') + \
             self.INFORMATION[self.INFO_KEYS['From']] + '_' + \
             self.INFORMATION[self.INFO_KEYS['To']] + str(name_decorator)
-        while name + str(name_decorator) in os.listdir('./transactions/unreconciled/'):
+        while name + str(name_decorator) + '.json' in os.listdir('./transactions/unreconciled/'):
             name_decorator += 1
         name = name.replace('/', '_') + str(name_decorator) + '.json'
         with open(os.path.join('./transactions/unreconciled/', name), 'w') as f:
@@ -268,3 +298,22 @@ class Transaction:
         while yn not in ['y', 'n'] and yn not in self.KEYWORDS:
             yn = raw_input(message + ' (y/n): ').lower()
         return yn
+
+    def _infer_name(self, cat, col_name):
+        if self.OTHER_TRANSACTIONS.empty:
+            return cat
+        if cat.capitalize() in list(self.OTHER_TRANSACTIONS[col_name]) and \
+                cat != cat.capitalize() and cat not in self.ACCOUNTS:
+            yn = self._get_yn_response("Did you mean {}? ".format(cat.capitalize()))
+            if yn == 'y':
+                cat = cat.capitalize()
+            if yn in self.KEYWORDS:
+                return yn
+        if cat not in list(self.OTHER_TRANSACTIONS[col_name]) and cat not in self.KEYWORDS and \
+                (cat.lower() != 'done' or "category" not in col_name.lower()):
+            yn = self._get_yn_response("Value of {} never seen before; really add? ".format(col_name))
+            if yn in self.KEYWORDS:
+                return yn
+            if yn == 'n':
+                cat = 'repeat'
+        return cat
