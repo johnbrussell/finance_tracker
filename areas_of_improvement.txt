@@ -1,0 +1,6 @@
+* testing
+* ability to split transaction
+* ability to do math in the program
+* fix the miscategorization bug
+* re-write new record logic
+* memorized transactions
