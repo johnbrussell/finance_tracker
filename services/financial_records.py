@@ -11,13 +11,18 @@ import json
 Action = namedtuple("Action", ['function', 'description'])
 
 
+CURRENT_BALANCES_CSV_PATH = './balances/current_balances.csv'
+INITIAL_BALANCES_CSV_PATH = './balances/initial_balances.csv'
+TRANSACTIONS_CSV_PATH = './transactions/transactions.csv'
+
+
 class FinancialRecords:
     def __init__(self):
         set_up_directories.set_up_directories()
+        self._set_balances(self._read_balances())
         self._ACCOUNTS = self._get_accounts()
         self._ACTIONS = self._set_up_actions()
         self._TRANSACTIONS = self._read_transactions()
-        self._set_balances(self._read_balances())
 
     @staticmethod
     def _get_accounts():
@@ -38,12 +43,19 @@ class FinancialRecords:
         self._BALANCES = balances_dict
 
     @staticmethod
-    def _read_balances():
+    def _set_blank_balances_csv():
+        balances_csv = pd.DataFrame()
+        balances_csv['Account'] = []
+        balances_csv['Starting Balance'] = []
+        balances_csv.to_csv(INITIAL_BALANCES_CSV_PATH, index=False)
+
+    def _read_balances(self):
         if os.path.exists('./balances/current_balances.csv'):
             return pd.read_csv('./balances/current_balances.csv')
         if os.path.exists('./balances/initial_balances.csv'):
             return pd.read_csv('./balances/initial_balances.csv')
-        raise IOError("initial_balances.csv file does not exist")
+        self._set_blank_balances_csv()
+        return self._read_balances()
 
     def interact_with_user(self):
         action = 'initial'

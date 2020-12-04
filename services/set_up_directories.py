@@ -2,6 +2,7 @@ import os
 
 
 DIRECTORIES_TO_SET_UP = [
+    './balances',
     './reports/',
     './transactions/unreconciled/'
 ]
