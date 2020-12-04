@@ -1,4 +1,4 @@
-from services import setup_directories
+from services import set_up_directories
 from services.transactions import Transaction
 from services.reporting_queue import ReportingQueue
 from collections import namedtuple
@@ -13,7 +13,7 @@ Action = namedtuple("Action", ['function', 'description'])
 
 class FinancialRecords:
     def __init__(self):
-        setup_directories.setup_directories()
+        set_up_directories.set_up_directories()
         self._ACCOUNTS = self._get_accounts()
         self._ACTIONS = self._set_up_actions()
         self._TRANSACTIONS = self._read_transactions()
