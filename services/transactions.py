@@ -51,7 +51,7 @@ class Transaction:
         self._run_process()
 
     def _run_process(self):
-        print "Enter 'back' to return to the prior step; 'cancel' to cancel the new transaction."
+        print("Enter 'back' to return to the prior step; 'cancel' to cancel the new transaction.")
         self._PROCESS[0](prev=list(), nxt=self._PROCESS[1:])
 
     def _interpret_result(self, previous_steps, current_step, next_steps, validation, info, key, **kwargs):
@@ -86,8 +86,12 @@ class Transaction:
             prev = prev[:-1]
             prev_step(prev=prev, nxt=nxt)
 
-    def _get_date(self, prev=list(), nxt=list()):
-        date = raw_input("Enter the date of the transaction (MM/DD/YYYY): ")
+    def _get_date(self, prev=None, nxt=None):
+        if prev is None:
+            prev = list()
+        if nxt is None:
+            nxt = list()
+        date = input("Enter the date of the transaction (MM/DD/YYYY): ")
         self._interpret_result(previous_steps=prev, current_step=self._get_date, next_steps=nxt,
                                validation=self._validate_date, info=date, key=self.INFO_KEYS['Date'])
 
@@ -107,8 +111,12 @@ class Transaction:
             if 'does not match format' in str(e):
                 return False
 
-    def _get_from(self, prev=list(), nxt=list()):
-        frm = raw_input("What account funded the transaction?: ")
+    def _get_from(self, prev=None, nxt=None):
+        if prev is None:
+            prev = list()
+        if nxt is None:
+            nxt = list()
+        frm = input("What account funded the transaction?: ")
         frm = self._detect_account(frm)
         frm = self._infer_name(frm, "From")
         frm = self._detect_income(frm)
@@ -154,8 +162,12 @@ class Transaction:
             return True
         return False
 
-    def _get_to(self, prev=list(), nxt=list()):
-        to = raw_input("What account received the transaction?: ")
+    def _get_to(self, prev=None, nxt=None):
+        if prev is None:
+            prev = list()
+        if nxt is None:
+            nxt = list()
+        to = input("What account received the transaction?: ")
         to = self._detect_account(to)
         to = self._infer_name(to, "To")
         self._interpret_result(previous_steps=prev, current_step=self._get_to, next_steps=nxt,
@@ -169,8 +181,12 @@ class Transaction:
             return False
         return True
 
-    def _get_memo(self, prev=list(), nxt=list()):
-        memo = raw_input("Enter memo for transaction: ")
+    def _get_memo(self, prev=None, nxt=None):
+        if prev is None:
+            prev = list()
+        if nxt is None:
+            nxt = list()
+        memo = input("Enter memo for transaction: ")
         self._interpret_result(previous_steps=prev, current_step=self._get_memo, next_steps=nxt,
                                validation=self._validate_memo, info=memo, key=self.INFO_KEYS['Memo'])
 
@@ -180,8 +196,12 @@ class Transaction:
             return True
         return False
 
-    def _get_amount(self, prev=list(), nxt=list()):
-        amount = raw_input("Enter amount of transaction: ")
+    def _get_amount(self, prev=None, nxt=None):
+        if prev is None:
+            prev = list()
+        if nxt is None:
+            nxt = list()
+        amount = input("Enter amount of transaction: ")
         self._interpret_result(previous_steps=prev, current_step=self._get_amount, next_steps=nxt,
                                validation=self._validate_amount, info=amount, key=self.INFO_KEYS['Amount'])
 
@@ -196,11 +216,15 @@ class Transaction:
             return True
         return False
 
-    def _get_categories(self, prev=list(), nxt=list()):
+    def _get_categories(self, prev=None, nxt=None):
+        if prev is None:
+            prev = list()
+        if nxt is None:
+            nxt = list()
         if self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
             cat = 'Transfer'
         else:
-            cat = raw_input("Enter category, or 'done' to stop categorizing: ").strip(' ')
+            cat = input("Enter category, or 'done' to stop categorizing: ").strip(' ')
         level, prev = self._check_back_categories(cat, prev, return_level=True)
         if level > 1 and \
                 self.INFORMATION['From'] in self.ACCOUNTS and self.INFORMATION['To'] in self.ACCOUNTS:
@@ -242,18 +266,22 @@ class Transaction:
         return '%s%s' % (self.INFO_KEYS['Category'], str(level))
 
     @staticmethod
-    def _validate_categories(cat):
+    def _validate_categories(_cat):
         return True
 
-    def _confirm(self, prev=list(), nxt=list()):
+    def _confirm(self, prev=None, nxt=None):
+        if prev is None:
+            prev = list()
+        if nxt is None:
+            nxt = list()
         max_category, prev = self._check_back_categories('', prev, return_level=True)
-        print 'Date:', self.INFORMATION['Date']
-        print 'From:', self.INFORMATION['From']
-        print 'To:', self.INFORMATION['To']
-        print 'Memo:', self.INFORMATION['Memo']
-        print 'Amount:', self.INFORMATION['Amount']
+        print('Date:', self.INFORMATION['Date'])
+        print('From:', self.INFORMATION['From'])
+        print('To:', self.INFORMATION['To'])
+        print('Memo:', self.INFORMATION['Memo'])
+        print('Amount:', self.INFORMATION['Amount'])
         for number in range(1, max_category):
-            print 'Category%s:' % number, self.INFORMATION['Category%s' % number]
+            print('Category%s:' % number, self.INFORMATION['Category%s' % number])
         yn = self._get_yn_response('Is this correct? ')
         if yn == 'n':
             yn = 'back'
@@ -270,7 +298,11 @@ class Transaction:
             return True
         return False
 
-    def _save(self, prev=list(), nxt=list()):
+    def _save(self, prev=None, nxt=None):
+        if prev is None:
+            prev = list()
+        if nxt is None:
+            nxt = list()
         name_decorator = 1
         name = self.INFORMATION[self.INFO_KEYS['Date']].replace('/', '-') + \
             self.INFORMATION[self.INFO_KEYS['From']] + '_' + \
@@ -284,7 +316,7 @@ class Transaction:
                                validation=self._validate_save, info='', key='')
 
     @staticmethod
-    def _validate_save(info):
+    def _validate_save(_info):
         return True
 
     @staticmethod
@@ -296,7 +328,7 @@ class Transaction:
     def _get_yn_response(self, message):
         yn = 'z'
         while yn not in ['y', 'n'] and yn not in self.KEYWORDS:
-            yn = raw_input(message + ' (y/n): ').lower()
+            yn = input(message + ' (y/n): ').lower()
         return yn
 
     def _infer_name(self, cat, col_name):

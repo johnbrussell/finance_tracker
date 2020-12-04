@@ -1,4 +1,4 @@
-from services import setup_directories
+from services import set_up_directories
 from services.transactions import Transaction
 from services.reporting_queue import ReportingQueue
 from collections import namedtuple
@@ -11,39 +11,51 @@ import json
 Action = namedtuple("Action", ['function', 'description'])
 
 
+CURRENT_BALANCES_CSV_PATH = './balances/current_balances.csv'
+INITIAL_BALANCES_CSV_PATH = './balances/initial_balances.csv'
+TRANSACTIONS_CSV_PATH = './transactions/transactions.csv'
+
+
 class FinancialRecords:
     def __init__(self):
-        setup_directories.setup_directories()
+        set_up_directories.set_up_directories()
+        self._set_balances(self._read_balances())
         self._ACCOUNTS = self._get_accounts()
         self._ACTIONS = self._set_up_actions()
         self._TRANSACTIONS = self._read_transactions()
-        self._set_balances(self._read_balances())
 
     @staticmethod
     def _get_accounts():
-        df = pd.read_csv('./balances/initial_balances.csv')
+        df = pd.read_csv(INITIAL_BALANCES_CSV_PATH)
         return list(set(df['Account'].tolist()))
 
     @staticmethod
     def _read_transactions():
-        if os.path.exists('./transactions/transactions.csv'):
-            return pd.read_csv('./transactions/transactions.csv')
+        if os.path.exists(TRANSACTIONS_CSV_PATH):
+            return pd.read_csv(TRANSACTIONS_CSV_PATH)
         return pd.DataFrame()
 
     def _set_balances(self, balances_csv):
-        balances_csv.to_csv('./balances/current_balances.csv', index=False)
+        balances_csv.to_csv(CURRENT_BALANCES_CSV_PATH, index=False)
         balances_dict = dict()
         for index, row in balances_csv.iterrows():
             balances_dict[row['Account']] = float(row['Starting Balance'])
         self._BALANCES = balances_dict
 
     @staticmethod
-    def _read_balances():
-        if os.path.exists('./balances/current_balances.csv'):
-            return pd.read_csv('./balances/current_balances.csv')
-        if os.path.exists('./balances/initial_balances.csv'):
-            return pd.read_csv('./balances/initial_balances.csv')
-        raise IOError("initial_balances.csv file does not exist")
+    def _set_blank_balances_csv():
+        balances_csv = pd.DataFrame()
+        balances_csv['Account'] = []
+        balances_csv['Starting Balance'] = []
+        balances_csv.to_csv(INITIAL_BALANCES_CSV_PATH, index=False)
+
+    def _read_balances(self):
+        if os.path.exists(CURRENT_BALANCES_CSV_PATH):
+            return pd.read_csv(CURRENT_BALANCES_CSV_PATH)
+        if os.path.exists(INITIAL_BALANCES_CSV_PATH):
+            return pd.read_csv(INITIAL_BALANCES_CSV_PATH)
+        self._set_blank_balances_csv()
+        return self._read_balances()
 
     def interact_with_user(self):
         action = 'initial'
@@ -52,7 +64,7 @@ class FinancialRecords:
         while action != 'quit':
             if action in self._ACTIONS.keys():
                 self._ACTIONS[action].function()
-            action = raw_input(prompt).lower()
+            action = input(prompt).lower()
 
     def _set_up_actions(self):
         # Must be function to use _add_new_transaction as object
@@ -125,7 +137,7 @@ class FinancialRecords:
         return categories
 
     def _recalculate_transactions(self):
-        self._set_balances(pd.read_csv('./balances/initial_balances.csv'))
+        self._set_balances(pd.read_csv(INITIAL_BALANCES_CSV_PATH))
         self._calculate_balances(full=True)
 
     def _calculate_balances(self, full=False, quiet=False):
@@ -147,8 +159,8 @@ class FinancialRecords:
         balances.columns = ['Account', 'Starting Balance']
         self._set_balances(balances)
         if not quiet:
-            print balances
-            print "Net worth: ", balances['Starting Balance'].sum()
+            print(balances)
+            print("Net worth: ", balances['Starting Balance'].sum())
 
     def _run_report(self):
         self._TRANSACTIONS['Amount'] = self._TRANSACTIONS['Amount'].apply(float)
@@ -181,10 +193,10 @@ class FinancialRecords:
         message = 'On what parameter should the search be?: %s ' % non_cat_cols
         search_col = 'notacolumnname'
         while search_col not in column_dict.keys() and 'category' != search_col:
-            search_col = raw_input(message).lower()
+            search_col = input(message).lower()
 
         message = 'Enter search key: '
-        search_val = raw_input(message)
+        search_val = input(message)
 
         df = self._TRANSACTIONS.copy().fillna('')
         df['Key'] = range(len(df))
@@ -204,7 +216,7 @@ class FinancialRecords:
         for index, row in df_list.iterrows():
             response = 'notyn'
             while response not in ['y', 'n']:
-                response = raw_input('Is this the transaction you are looking to edit?: \n %s ' % row).lower()
+                response = input('Is this the transaction you are looking to edit?: \n %s ' % row).lower()
 
             if response == 'y':
                 df = df[df['Key'] != row['Key']]
@@ -216,22 +228,24 @@ class FinancialRecords:
 
     def _add_account(self):
         yn_response = 'notaresponse'
+        account = None
+        initial_balance = None
         while yn_response not in ['y', 'n']:
-            account = raw_input("Enter name of account to add: ")
-            initial_balance = raw_input("Enter initial balance of account: ")
-            yn_response = raw_input("Confirm: %s account has initial balance of %s: " %
-                                    (account, initial_balance)).lower()
+            account = input("Enter name of account to add: ")
+            initial_balance = input("Enter initial balance of account: ")
+            yn_response = input("Confirm: %s account has initial balance of %s: " %
+                                (account, initial_balance)).lower()
 
         row = list()
         row.append({'Account': account, 'Starting Balance': initial_balance})
 
-        for type in ['initial', 'current']:
-            if '{df}_balances.csv'.format(df=type) in os.listdir('./balances'):
-                df = pd.read_csv('./balances/{df}_balances.csv'.format(df=type))
+        for balance_type_path in [INITIAL_BALANCES_CSV_PATH, CURRENT_BALANCES_CSV_PATH]:
+            if balance_type_path in os.listdir('./balances'):
+                df = pd.read_csv(balance_type_path)
             else:
                 df = pd.DataFrame()
             df = pd.concat([df, pd.DataFrame(row)])
-            df.to_csv('./balances/{df}_balances.csv'.format(df=type), index=False)
+            df.to_csv(balance_type_path, index=False)
 
         self._set_balances(self._read_balances())
         self._ACCOUNTS = self._get_accounts()
