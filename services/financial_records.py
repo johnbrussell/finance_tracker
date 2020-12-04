@@ -26,17 +26,17 @@ class FinancialRecords:
 
     @staticmethod
     def _get_accounts():
-        df = pd.read_csv('./balances/initial_balances.csv')
+        df = pd.read_csv(INITIAL_BALANCES_CSV_PATH)
         return list(set(df['Account'].tolist()))
 
     @staticmethod
     def _read_transactions():
-        if os.path.exists('./transactions/transactions.csv'):
-            return pd.read_csv('./transactions/transactions.csv')
+        if os.path.exists(TRANSACTIONS_CSV_PATH):
+            return pd.read_csv(TRANSACTIONS_CSV_PATH)
         return pd.DataFrame()
 
     def _set_balances(self, balances_csv):
-        balances_csv.to_csv('./balances/current_balances.csv', index=False)
+        balances_csv.to_csv(CURRENT_BALANCES_CSV_PATH, index=False)
         balances_dict = dict()
         for index, row in balances_csv.iterrows():
             balances_dict[row['Account']] = float(row['Starting Balance'])
@@ -50,10 +50,10 @@ class FinancialRecords:
         balances_csv.to_csv(INITIAL_BALANCES_CSV_PATH, index=False)
 
     def _read_balances(self):
-        if os.path.exists('./balances/current_balances.csv'):
-            return pd.read_csv('./balances/current_balances.csv')
-        if os.path.exists('./balances/initial_balances.csv'):
-            return pd.read_csv('./balances/initial_balances.csv')
+        if os.path.exists(CURRENT_BALANCES_CSV_PATH):
+            return pd.read_csv(CURRENT_BALANCES_CSV_PATH)
+        if os.path.exists(INITIAL_BALANCES_CSV_PATH):
+            return pd.read_csv(INITIAL_BALANCES_CSV_PATH)
         self._set_blank_balances_csv()
         return self._read_balances()
 
@@ -137,7 +137,7 @@ class FinancialRecords:
         return categories
 
     def _recalculate_transactions(self):
-        self._set_balances(pd.read_csv('./balances/initial_balances.csv'))
+        self._set_balances(pd.read_csv(INITIAL_BALANCES_CSV_PATH))
         self._calculate_balances(full=True)
 
     def _calculate_balances(self, full=False, quiet=False):
@@ -239,13 +239,13 @@ class FinancialRecords:
         row = list()
         row.append({'Account': account, 'Starting Balance': initial_balance})
 
-        for balance_type in ['initial', 'current']:
-            if '{df}_balances.csv'.format(df=balance_type) in os.listdir('./balances'):
-                df = pd.read_csv('./balances/{df}_balances.csv'.format(df=balance_type))
+        for balance_type_path in [INITIAL_BALANCES_CSV_PATH, CURRENT_BALANCES_CSV_PATH]:
+            if balance_type_path in os.listdir('./balances'):
+                df = pd.read_csv(balance_type_path)
             else:
                 df = pd.DataFrame()
             df = pd.concat([df, pd.DataFrame(row)])
-            df.to_csv('./balances/{df}_balances.csv'.format(df=balance_type), index=False)
+            df.to_csv(balance_type_path, index=False)
 
         self._set_balances(self._read_balances())
         self._ACCOUNTS = self._get_accounts()
