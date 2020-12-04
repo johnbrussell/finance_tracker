@@ -51,7 +51,7 @@ class Transaction:
         self._run_process()
 
     def _run_process(self):
-        print "Enter 'back' to return to the prior step; 'cancel' to cancel the new transaction."
+        print("Enter 'back' to return to the prior step; 'cancel' to cancel the new transaction.")
         self._PROCESS[0](prev=list(), nxt=self._PROCESS[1:])
 
     def _interpret_result(self, previous_steps, current_step, next_steps, validation, info, key, **kwargs):
@@ -247,13 +247,13 @@ class Transaction:
 
     def _confirm(self, prev=list(), nxt=list()):
         max_category, prev = self._check_back_categories('', prev, return_level=True)
-        print 'Date:', self.INFORMATION['Date']
-        print 'From:', self.INFORMATION['From']
-        print 'To:', self.INFORMATION['To']
-        print 'Memo:', self.INFORMATION['Memo']
-        print 'Amount:', self.INFORMATION['Amount']
+        print('Date:', self.INFORMATION['Date'])
+        print('From:', self.INFORMATION['From'])
+        print('To:', self.INFORMATION['To'])
+        print('Memo:', self.INFORMATION['Memo'])
+        print('Amount:', self.INFORMATION['Amount'])
         for number in range(1, max_category):
-            print 'Category%s:' % number, self.INFORMATION['Category%s' % number]
+            print('Category%s:' % number, self.INFORMATION['Category%s' % number])
         yn = self._get_yn_response('Is this correct? ')
         if yn == 'n':
             yn = 'back'

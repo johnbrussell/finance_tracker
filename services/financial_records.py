@@ -147,8 +147,8 @@ class FinancialRecords:
         balances.columns = ['Account', 'Starting Balance']
         self._set_balances(balances)
         if not quiet:
-            print balances
-            print "Net worth: ", balances['Starting Balance'].sum()
+            print(balances)
+            print("Net worth: ", balances['Starting Balance'].sum())
 
     def _run_report(self):
         self._TRANSACTIONS['Amount'] = self._TRANSACTIONS['Amount'].apply(float)
