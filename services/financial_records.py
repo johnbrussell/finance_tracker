@@ -52,7 +52,7 @@ class FinancialRecords:
         while action != 'quit':
             if action in self._ACTIONS.keys():
                 self._ACTIONS[action].function()
-            action = raw_input(prompt).lower()
+            action = input(prompt).lower()
 
     def _set_up_actions(self):
         # Must be function to use _add_new_transaction as object
@@ -181,10 +181,10 @@ class FinancialRecords:
         message = 'On what parameter should the search be?: %s ' % non_cat_cols
         search_col = 'notacolumnname'
         while search_col not in column_dict.keys() and 'category' != search_col:
-            search_col = raw_input(message).lower()
+            search_col = input(message).lower()
 
         message = 'Enter search key: '
-        search_val = raw_input(message)
+        search_val = input(message)
 
         df = self._TRANSACTIONS.copy().fillna('')
         df['Key'] = range(len(df))
@@ -204,7 +204,7 @@ class FinancialRecords:
         for index, row in df_list.iterrows():
             response = 'notyn'
             while response not in ['y', 'n']:
-                response = raw_input('Is this the transaction you are looking to edit?: \n %s ' % row).lower()
+                response = input('Is this the transaction you are looking to edit?: \n %s ' % row).lower()
 
             if response == 'y':
                 df = df[df['Key'] != row['Key']]
@@ -217,9 +217,9 @@ class FinancialRecords:
     def _add_account(self):
         yn_response = 'notaresponse'
         while yn_response not in ['y', 'n']:
-            account = raw_input("Enter name of account to add: ")
-            initial_balance = raw_input("Enter initial balance of account: ")
-            yn_response = raw_input("Confirm: %s account has initial balance of %s: " %
+            account = input("Enter name of account to add: ")
+            initial_balance = input("Enter initial balance of account: ")
+            yn_response = input("Confirm: %s account has initial balance of %s: " %
                                     (account, initial_balance)).lower()
 
         row = list()
