@@ -93,7 +93,8 @@ class FinancialRecords:
         return prompt
 
     def _add_new_transaction(self):
-        return Transaction(self._ACCOUNTS).create_new_transaction()
+        transaction = Transaction(self._ACCOUNTS)
+        return transaction.create_new_transaction()
 
     def _update_list_of_transactions(self):
         new_transactions = self._get_new_transactions()
@@ -223,6 +224,7 @@ class FinancialRecords:
                 df = df[df['Key'] != row['Key']]
                 del df['Key']
                 successful = self._add_new_transaction()
+                print(successful)
                 if successful:
                     self._TRANSACTIONS = df.copy()
                     self._calculate_balances(quiet=True)

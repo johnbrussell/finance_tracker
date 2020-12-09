@@ -61,6 +61,8 @@ class Transaction:
             if validation:
                 if key:
                     self.INFORMATION[key] = info
+                if len(next_steps) == 0:
+                    return True
                 return self._proceed_to_next_step(prev=previous_steps, current=current_step, nxt=next_steps)
             else:
                 return current_step(prev=previous_steps, nxt=next_steps)
@@ -80,6 +82,7 @@ class Transaction:
             next_step = nxt[0]
             nxt = nxt[1:]
             return next_step(prev=prev, nxt=nxt)
+        print("returning false from proceed to next step")
         return False
 
     @staticmethod
@@ -90,6 +93,7 @@ class Transaction:
             prev_step = prev[len(prev) - 1]
             prev = prev[:-1]
             return prev_step(prev=prev, nxt=nxt)
+        print("returning false from proceed to prev step")
         return False
 
     def _get_date(self, prev=None, nxt=None):
@@ -301,8 +305,8 @@ class Transaction:
             prev = self._check_back_categories(yn, prev)
             if re_append:
                 prev.append(self._get_categories)
-        self._interpret_result(previous_steps=prev, current_step=self._confirm, next_steps=nxt,
-                               validation=self._validate_confirmation, info=yn, key='')
+        return self._interpret_result(previous_steps=prev, current_step=self._confirm, next_steps=nxt,
+                                      validation=self._validate_confirmation, info=yn, key='')
 
     @staticmethod
     def _validate_confirmation(conf):
@@ -322,11 +326,13 @@ class Transaction:
         while name + str(name_decorator) + '.json' in os.listdir('./transactions/unreconciled/'):
             name_decorator += 1
         name = name.replace('/', '_') + str(name_decorator) + '.json'
-        with open(os.path.join('./transactions/unreconciled/', name), 'w') as f:
-            json.dump(self.INFORMATION, f)
-        self._interpret_result(previous_steps=prev, current_step=self._save, next_steps=nxt,
-                               validation=self._validate_save, info='', key='')
-        return True
+        if self._interpret_result(previous_steps=prev, current_step=self._save, next_steps=nxt,
+                                  validation=self._validate_save, info='', key=''):
+            with open(os.path.join('./transactions/unreconciled/', name), 'w') as f:
+                json.dump(self.INFORMATION, f)
+            return True
+        print("returning false from _save")
+        return False
 
     @staticmethod
     def _validate_save(_info):
