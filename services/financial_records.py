@@ -97,7 +97,7 @@ class FinancialRecords:
 
     def _update_list_of_transactions(self):
         new_transactions = self._get_new_transactions()
-        self._TRANSACTIONS = pd.concat([self._TRANSACTIONS, new_transactions])
+        self._TRANSACTIONS = pd.concat([self._TRANSACTIONS, new_transactions], sort=False)
         self._set_transaction_columns()
         self._TRANSACTIONS.to_csv('./transactions/transactions.csv', index=False)
 
