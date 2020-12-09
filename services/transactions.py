@@ -48,11 +48,11 @@ class Transaction:
 
     def create_new_transaction(self):
         self._create_process()
-        self._run_process()
+        return self._run_process()
 
     def _run_process(self):
         print("Enter 'back' to return to the prior step; 'cancel' to cancel the new transaction.")
-        self._PROCESS[0](prev=list(), nxt=self._PROCESS[1:])
+        return self._PROCESS[0](prev=list(), nxt=self._PROCESS[1:])
 
     def _interpret_result(self, previous_steps, current_step, next_steps, validation, info, key, **kwargs):
         # Info is the information collected in the function being interpreted.
@@ -61,13 +61,17 @@ class Transaction:
             if validation:
                 if key:
                     self.INFORMATION[key] = info
-                self._proceed_to_next_step(prev=previous_steps, current=current_step, nxt=next_steps)
+                return self._proceed_to_next_step(prev=previous_steps, current=current_step, nxt=next_steps)
             else:
-                current_step(prev=previous_steps, nxt=next_steps)
+                return current_step(prev=previous_steps, nxt=next_steps)
         if info == 'back':
-            self._proceed_to_prev_step(prev=previous_steps, current=current_step, nxt=next_steps)
+            return self._proceed_to_prev_step(prev=previous_steps, current=current_step, nxt=next_steps)
         if info == 'repeat':
-            current_step(prev=previous_steps, nxt=next_steps)
+            return current_step(prev=previous_steps, nxt=next_steps)
+        if info in self.KEYWORDS:
+            return False
+        print("reached unreachable state")
+        return False
 
     @staticmethod
     def _proceed_to_next_step(prev, current, nxt):
@@ -75,7 +79,8 @@ class Transaction:
             prev.append(current)
             next_step = nxt[0]
             nxt = nxt[1:]
-            next_step(prev=prev, nxt=nxt)
+            return next_step(prev=prev, nxt=nxt)
+        return False
 
     @staticmethod
     def _proceed_to_prev_step(prev, current, nxt):
@@ -84,7 +89,8 @@ class Transaction:
             nxt = current + nxt
             prev_step = prev[len(prev) - 1]
             prev = prev[:-1]
-            prev_step(prev=prev, nxt=nxt)
+            return prev_step(prev=prev, nxt=nxt)
+        return False
 
     def _get_date(self, prev=None, nxt=None):
         if prev is None:
@@ -92,8 +98,8 @@ class Transaction:
         if nxt is None:
             nxt = list()
         date = input("Enter the date of the transaction (MM/DD/YYYY): ")
-        self._interpret_result(previous_steps=prev, current_step=self._get_date, next_steps=nxt,
-                               validation=self._validate_date, info=date, key=self.INFO_KEYS['Date'])
+        return self._interpret_result(previous_steps=prev, current_step=self._get_date, next_steps=nxt,
+                                      validation=self._validate_date, info=date, key=self.INFO_KEYS['Date'])
 
     @staticmethod
     def _validate_date(date):
@@ -109,7 +115,8 @@ class Transaction:
             return True
         except ValueError as e:
             if 'does not match format' in str(e):
-                return False
+                pass
+        return False
 
     def _get_from(self, prev=None, nxt=None):
         if prev is None:
@@ -120,8 +127,8 @@ class Transaction:
         frm = self._detect_account(frm)
         frm = self._infer_name(frm, "From")
         frm = self._detect_income(frm)
-        self._interpret_result(previous_steps=prev, current_step=self._get_from, next_steps=nxt,
-                               validation=self._validate_from, info=frm, key=self.INFO_KEYS['From'])
+        return self._interpret_result(previous_steps=prev, current_step=self._get_from, next_steps=nxt,
+                                      validation=self._validate_from, info=frm, key=self.INFO_KEYS['From'])
 
     def _detect_income(self, frm):
         if frm in self.ACCOUNTS or frm in self.KEYWORDS:
@@ -150,7 +157,7 @@ class Transaction:
 
     @staticmethod
     def _similar_to_an_account(frm, account, distance):
-        if distance <= max(abs(len(frm) - len(account)) - 1, min(len(frm), len(account)) / 2):
+        if distance <= max(abs(len(frm) - len(account)) - 1.0, min(len(frm), len(account)) / 2):
             return True
         if account in frm or frm in account:  # Eschewing return "a in b or b in a" format for clarity.
             return True
@@ -170,8 +177,8 @@ class Transaction:
         to = input("What account received the transaction?: ")
         to = self._detect_account(to)
         to = self._infer_name(to, "To")
-        self._interpret_result(previous_steps=prev, current_step=self._get_to, next_steps=nxt,
-                               validation=self._validate_to, info=to, key=self.INFO_KEYS['To'])
+        return self._interpret_result(previous_steps=prev, current_step=self._get_to, next_steps=nxt,
+                                      validation=self._validate_to, info=to, key=self.INFO_KEYS['To'])
 
     def _validate_to(self, to):
         frm = self.INFORMATION['From']
@@ -187,8 +194,8 @@ class Transaction:
         if nxt is None:
             nxt = list()
         memo = input("Enter memo for transaction: ")
-        self._interpret_result(previous_steps=prev, current_step=self._get_memo, next_steps=nxt,
-                               validation=self._validate_memo, info=memo, key=self.INFO_KEYS['Memo'])
+        return self._interpret_result(previous_steps=prev, current_step=self._get_memo, next_steps=nxt,
+                                      validation=self._validate_memo, info=memo, key=self.INFO_KEYS['Memo'])
 
     @staticmethod
     def _validate_memo(memo):
@@ -202,8 +209,8 @@ class Transaction:
         if nxt is None:
             nxt = list()
         amount = input("Enter amount of transaction: ")
-        self._interpret_result(previous_steps=prev, current_step=self._get_amount, next_steps=nxt,
-                               validation=self._validate_amount, info=amount, key=self.INFO_KEYS['Amount'])
+        return self._interpret_result(previous_steps=prev, current_step=self._get_amount, next_steps=nxt,
+                                      validation=self._validate_amount, info=amount, key=self.INFO_KEYS['Amount'])
 
     @staticmethod
     def _validate_amount(amount):
@@ -214,6 +221,11 @@ class Transaction:
                 return False
         if amount > 0:
             return True
+        if amount < 0:
+            yn_input = 'notyn'
+            while yn_input not in ['y', 'n']:
+                yn_input = input("Is this transaction a refund of a previous purchase? (y/n) ").lower()
+            return yn_input == 'y'
         return False
 
     def _get_categories(self, prev=None, nxt=None):
@@ -232,8 +244,8 @@ class Transaction:
         cat = self._infer_name(cat, 'Category{}'.format(str(level)))
         nxt = self._determine_categorization_finish(cat, nxt)
         key = self._determine_categorization_key(cat, level)
-        self._interpret_result(previous_steps=prev, current_step=self._get_categories, next_steps=nxt,
-                               validation=self._validate_categories, info=cat, key=key)
+        return self._interpret_result(previous_steps=prev, current_step=self._get_categories, next_steps=nxt,
+                                      validation=self._validate_categories, info=cat, key=key)
 
     def _check_back_categories(self, cat, prev, return_level=False):
         # This function counts the number of times the `get_categories` function was used.
@@ -314,6 +326,7 @@ class Transaction:
             json.dump(self.INFORMATION, f)
         self._interpret_result(previous_steps=prev, current_step=self._save, next_steps=nxt,
                                validation=self._validate_save, info='', key='')
+        return True
 
     @staticmethod
     def _validate_save(_info):

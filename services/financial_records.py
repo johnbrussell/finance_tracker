@@ -93,11 +93,11 @@ class FinancialRecords:
         return prompt
 
     def _add_new_transaction(self):
-        Transaction(self._ACCOUNTS).create_new_transaction()
+        return Transaction(self._ACCOUNTS).create_new_transaction()
 
     def _update_list_of_transactions(self):
         new_transactions = self._get_new_transactions()
-        self._TRANSACTIONS = pd.concat([self._TRANSACTIONS, new_transactions])
+        self._TRANSACTIONS = pd.concat([self._TRANSACTIONS, new_transactions], sort=False)
         self._set_transaction_columns()
         self._TRANSACTIONS.to_csv('./transactions/transactions.csv', index=False)
 
@@ -186,14 +186,13 @@ class FinancialRecords:
         columns = list(self._TRANSACTIONS.columns)
         column_dict = dict()
         for col in columns:
-            column_dict[col] = col
             column_dict[col.lower()] = col
-        non_cat_cols = [col for col in columns if 'Category' not in col] + ['Category']
 
-        message = 'On what parameter should the search be?: %s ' % non_cat_cols
+        message = 'On what parameter should the search be?: %s ' % columns
         search_col = 'notacolumnname'
-        while search_col not in column_dict.keys() and 'category' != search_col:
-            search_col = input(message).lower()
+
+        while search_col not in columns:
+            search_col = column_dict.get(input(message).lower(), 'notacolumnname')
 
         message = 'Enter search key: '
         search_val = input(message)
@@ -202,16 +201,18 @@ class FinancialRecords:
         df['Key'] = range(len(df))
         for col in column_dict.values():
             df[col] = df[col].apply(str)
-        df_list = list()
-        for col in column_dict.keys():
-            if search_col in col:
-                df['editdistance'] = len(search_val)
-                if search_col != 'amount':
-                    df['editdistance'] = df[column_dict[col]].apply(
-                        lambda x: editdistance.eval(x, search_val))
-                df_list.append(df[df['editdistance'] < max(len(search_val) - 2, len(search_val) / 2)].copy())
-                del df['editdistance']
-        df_list = pd.concat(df_list)
+
+        df['editdistance'] = len(search_val)
+        if search_col != 'amount':
+            df['editdistance'] = df[search_col].apply(
+                lambda x: editdistance.eval(x, search_val))
+        df_list = df[df['editdistance'] < max(len(search_val) - 2.0, len(search_val) / 2)].copy()
+        del df['editdistance']
+
+        if len(df_list) == 0:
+            print("Search key not found")
+
+        df_list.sort_values(by=['editdistance'], ascending=[True], inplace=True)
 
         for index, row in df_list.iterrows():
             response = 'notyn'
@@ -221,9 +222,12 @@ class FinancialRecords:
             if response == 'y':
                 df = df[df['Key'] != row['Key']]
                 del df['Key']
-                self._TRANSACTIONS = df.copy()
-                self._add_new_transaction()
-                self._calculate_balances(quiet=True)
+                successful = self._add_new_transaction()
+                if successful:
+                    self._TRANSACTIONS = df.copy()
+                    self._calculate_balances(quiet=True)
+                else:
+                    print("Something went wrong.  Not saving changes")
                 break
 
     def _add_account(self):

@@ -38,7 +38,7 @@ class TestTransactions(unittest.TestCase):
         self.assertTrue(self.TRANSACTION._validate_memo('any_input'))
 
     def test_validate_amount(self):
-        self.assertFalse(self.TRANSACTION._validate_amount(-1))
+        self.assertTrue(self.TRANSACTION._validate_amount(1))
         self.assertFalse(self.TRANSACTION._validate_amount(0))
         self.assertFalse(self.TRANSACTION._validate_amount("One Hundred"))
 
